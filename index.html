@@ -313,7 +313,7 @@
                     
                     const newData = { ...dashboardData };
                     
-                    // 1. READ SUMMARY SHEET (Same as before)
+                    // 1. READ SUMMARY SHEET
                     const wsMain = wb.Sheets[wb.SheetNames[0]];
                     if (wsMain) {
                         const rawData = XLSX.utils.sheet_to_json(wsMain, { header: 1 });
@@ -329,13 +329,18 @@
                             }
                             return null;
                         };
-                        // ... (existing summary parsing logic)
+                        
                         const ctaVal = findValue(['CTA Production', 'CTA Actual']); if (ctaVal) newData.production[0].actual = ctaVal;
                         const ptaVal = findValue(['PTA Production', 'PTA Actual']); if (ptaVal) newData.production[1].actual = ptaVal;
                         const availVal = findValue(['Availability', 'Plant Availability']); if (availVal) newData.availability.actual = availVal;
                         const powerVal = findValue(['Plant Power']); if (powerVal) newData.metrics.power[0].value = powerVal;
                         const steamVal = findValue(['Steam to DHT']); if (steamVal) newData.metrics.steam[0].value = steamVal;
                         const pxVal = findValue(['PX Rate']); if (pxVal) newData.metrics.flow[0].value = pxVal;
+                        
+                        // --- NEW: FIND POWER GEN & ADM 2 FLOW ---
+                        const powerGenVal = findValue(['Power Gen', 'Generator']); if (powerGenVal) newData.metrics.power[1].value = powerGenVal;
+                        const adm2Val = findValue(['ADM 2 Flow', 'ADM2']); if (adm2Val) newData.metrics.flow[1].value = adm2Val;
+
                         const alarmVal = findValue(['DCS Alarm']); if (alarmVal !== null) newData.hsse.alarms = alarmVal;
                         const bypassVal = findValue(['Safety Bypass']); if (bypassVal !== null) newData.hsse.bypass = bypassVal;
                         const limitVal = findValue(['Beyond Operating Limit']); if (limitVal !== null) newData.hsse.limit = limitVal;
@@ -347,19 +352,15 @@
                         const effWater = findValue(['Demin Water']); if (effWater !== null) newData.efficiency.water.val = effWater;
                     }
 
-                    // 2. READ HOURLY LOGS SHEET (New Logic)
-                    // We assume the sheet is named "Hourly Logs" or is the 2nd sheet
+                    // 2. READ HOURLY LOGS SHEET
                     let wsHourly = wb.Sheets["Hourly Logs"];
                     if (!wsHourly && wb.SheetNames.length > 1) {
-                        wsHourly = wb.Sheets[wb.SheetNames[1]]; // Fallback to 2nd sheet
+                        wsHourly = wb.Sheets[wb.SheetNames[1]]; 
                     }
 
                     if (wsHourly) {
-                        // Expect headers: Time, Power (MW), Steam (TPH), Flow (TPH)
                         const hourlyJson = XLSX.utils.sheet_to_json(wsHourly); 
-                        // Map inconsistent column names if needed
                         const mappedHourly = hourlyJson.map(row => {
-                            // Find keys loosely
                             const timeKey = Object.keys(row).find(k => k.toLowerCase().includes('time'));
                             const powerKey = Object.keys(row).find(k => k.toLowerCase().includes('power'));
                             const steamKey = Object.keys(row).find(k => k.toLowerCase().includes('steam'));
@@ -371,7 +372,7 @@
                                 steam: parseFloat(row[steamKey]) || 0,
                                 flow: parseFloat(row[flowKey]) || 0
                             };
-                        }).filter(r => r.time); // Remove empty rows
+                        }).filter(r => r.time);
 
                         if (mappedHourly.length > 0) {
                             newData.hourly = mappedHourly;
