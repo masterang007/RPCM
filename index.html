@@ -28,7 +28,7 @@
         window.firebaseModules = { initializeApp, getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, getFirestore, doc, setDoc, onSnapshot };
     </script>
     
-    <!-- Tailwind Config for Custom Colors -->
+    <!-- Tailwind Config -->
     <script>
         try {
             tailwind.config = {
@@ -60,6 +60,33 @@
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
+
+        // =================================================================================
+        // --- 🛑 YOUR FIREBASE CONFIG IS NOW INTEGRATED 🛑 ---
+        // Note: Ensure "Anonymous" sign-in is enabled in Firebase Console > Authentication
+        // =================================================================================
+        
+        const USER_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyB5gFPpiFHvG4LnF2KhDQVa6R98cTb-cfA",
+            authDomain: "rpcm-dashboard.firebaseapp.com",
+            projectId: "rpcm-dashboard",
+            storageBucket: "rpcm-dashboard.firebasestorage.app",
+            messagingSenderId: "718536830642",
+            appId: "1:718536830642:web:7c34bf37017efe40e5a3ab",
+            measurementId: "G-V7Y09MT8ET"
+        };
+
+        // --- CONFIG RESOLUTION LOGIC (Prevents Errors) ---
+        let activeConfig = null;
+        let configSource = 'offline'; // 'user', 'canvas', 'offline'
+
+        if (USER_FIREBASE_CONFIG) {
+            activeConfig = USER_FIREBASE_CONFIG;
+            configSource = 'user';
+        } else if (typeof __firebase_config !== 'undefined') {
+            // Fallback for Canvas preview environment
+            try { activeConfig = JSON.parse(__firebase_config); configSource = 'canvas'; } catch(e) {}
+        }
 
         // --- Icons Components ---
         const Icons = {
@@ -206,56 +233,63 @@
 
             // --- SYSTEM INIT ---
             useEffect(() => {
-                // Check if we are in an environment with cloud keys
-                if (typeof __firebase_config !== 'undefined') {
-                    // --- CLOUD MODE (CANVAS) ---
+                const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore, doc, onSnapshot } = window.firebaseModules;
+                
+                if (activeConfig) {
                     setIsCloudAvailable(true);
-                    const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore, doc, onSnapshot } = window.firebaseModules;
-                    
                     try {
-                        const firebaseConfig = JSON.parse(__firebase_config);
-                        const app = initializeApp(firebaseConfig);
+                        const app = initializeApp(activeConfig);
                         const auth = getAuth(app);
                         const db = getFirestore(app);
-                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                        
+                        // Path Logic
+                        let path;
+                        if (configSource === 'user') {
+                            path = doc(db, 'dashboard_data', 'live_status');
+                        } else {
+                            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                            path = doc(db, 'artifacts', appId, 'public', 'data', 'dashboard_state', 'current_state');
+                        }
 
-                        const initAuth = async () => {
-                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                                await signInWithCustomToken(auth, __initial_auth_token);
-                            } else {
-                                await signInAnonymously(auth);
-                            }
-                        };
-                        initAuth();
+                        // Auth logic with Error Handling
+                        if (configSource === 'canvas' && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            signInWithCustomToken(auth, __initial_auth_token).catch(e => console.error("Token Auth failed", e));
+                        } else {
+                            signInAnonymously(auth).catch(e => {
+                                console.error("Anon Auth failed", e);
+                                if (e.code === 'auth/configuration-not-found' || e.code === 'auth/admin-restricted-operation') {
+                                    alert("⚠️ Setup Required: Please enable 'Anonymous' sign-in in your Firebase Console (Build > Authentication > Sign-in method).");
+                                }
+                                fallbackToLocal();
+                            });
+                        }
 
                         onAuthStateChanged(auth, (u) => {
                             if (u) {
                                 setUser(u);
-                                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'dashboard_state', 'current_state');
-                                onSnapshot(docRef, (docSnap) => {
+                                onSnapshot(path, (docSnap) => {
                                     if (docSnap.exists()) {
                                         const data = docSnap.data();
                                         setDashboardData(data.dashboardData);
                                         setLastUpdated(data.lastUpdated);
                                     } else {
-                                        setLastUpdated("No cloud data yet.");
+                                        setLastUpdated("Connected. Waiting for data...");
                                     }
                                 });
                             }
                         });
-                    } catch (e) {
-                        console.error("Cloud init failed", e);
-                        fallbackToLocal();
+                    } catch (e) { 
+                        console.error("Cloud Config Error", e); 
+                        fallbackToLocal(); 
                     }
                 } else {
-                    // --- OFFLINE MODE (NETLIFY / LOCAL) ---
                     fallbackToLocal();
                 }
             }, []);
 
             const fallbackToLocal = () => {
                 setIsCloudAvailable(false);
-                setLastUpdated("Local Mode (No Cloud)");
+                setLastUpdated("Local Mode (Offline)");
                 const stored = localStorage.getItem('rpcm_dashboard_data_v3');
                 if (stored) {
                     try {
@@ -315,15 +349,22 @@
                     setDashboardData(newData);
                     setLastUpdated(today);
 
-                    // SAVE (Cloud or Local)
-                    if (isCloudAvailable && user) {
+                    // SAVE STRATEGY
+                    if (isCloudAvailable && user && activeConfig) {
                         try {
-                            const { getFirestore, doc, setDoc } = window.firebaseModules;
-                            const firebaseConfig = JSON.parse(__firebase_config);
-                            const app = window.firebaseModules.initializeApp(firebaseConfig);
+                            const { initializeApp, getFirestore, doc, setDoc } = window.firebaseModules;
+                            const app = initializeApp(activeConfig);
                             const db = getFirestore(app);
-                            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'dashboard_state', 'current_state'), {
+                            
+                            let path;
+                            if (configSource === 'user') {
+                                path = doc(db, 'dashboard_data', 'live_status');
+                            } else {
+                                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                                path = doc(db, 'artifacts', appId, 'public', 'data', 'dashboard_state', 'current_state');
+                            }
+
+                            await setDoc(path, {
                                 dashboardData: newData,
                                 lastUpdated: today,
                                 updatedBy: user.uid
@@ -332,7 +373,7 @@
                         } catch (e) {
                             console.error(e);
                             localStorage.setItem('rpcm_dashboard_data_v3', JSON.stringify(newData));
-                            alert("Cloud save failed. Saved locally.");
+                            alert("Cloud sync error. Saved locally.");
                         }
                     } else {
                         localStorage.setItem('rpcm_dashboard_data_v3', JSON.stringify(newData));
