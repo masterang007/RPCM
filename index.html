@@ -220,6 +220,7 @@
                 production: [{ id: 'cta', title: 'CTA Production', actual: 0, target: 1808, unit: 'tonnes' }, { id: 'pta', title: 'PTA Production', actual: 0, target: 1857, unit: 'tonnes' }],
                 availability: { actual: 0, target: 97.0 },
                 metrics: {
+                    // Updated Structure based on request - Added ALL 10 Metrics
                     power: [
                         { id: 'p1', title: 'Plant Power', value: 0, max: 20, unit: 'MW', icon: 'Zap' }, 
                         { id: 'p2', title: 'Power Gen', value: 0, max: 15, unit: 'MW', icon: 'Zap' },
@@ -278,13 +279,17 @@
                                     if (docSnap.exists()) {
                                         const data = docSnap.data();
                                         // --- ROBUST MERGE LOGIC ---
+                                        // Explicitly check if new structure exists, else use initial structure
+                                        const incomingMetrics = data.dashboardData.metrics || {};
+                                        
                                         const mergedData = {
                                             ...initialData,
                                             ...data.dashboardData,
                                             metrics: {
-                                                power: data.dashboardData.metrics?.power || initialData.metrics.power,
-                                                steam: data.dashboardData.metrics?.steam || initialData.metrics.steam,
-                                                flow: data.dashboardData.metrics?.flow || initialData.metrics.flow
+                                                // Ensure arrays exist, even if old data only had partial metrics
+                                                power: incomingMetrics.power?.length >= 4 ? incomingMetrics.power : initialData.metrics.power,
+                                                steam: incomingMetrics.steam?.length >= 3 ? incomingMetrics.steam : initialData.metrics.steam,
+                                                flow: incomingMetrics.flow?.length >= 3 ? incomingMetrics.flow : initialData.metrics.flow
                                             },
                                             hourly: data.dashboardData.hourly || []
                                         };
@@ -308,17 +313,18 @@
             const fallbackToLocal = () => {
                 setIsCloudAvailable(false);
                 setLastUpdated("Local Mode (Offline)");
-                const stored = localStorage.getItem('rpcm_dashboard_data_v5');
+                const stored = localStorage.getItem('rpcm_dashboard_data_v6');
                 if (stored) {
                     try {
                         const parsed = JSON.parse(stored);
+                        // Robust merge for local storage too
                         const mergedData = {
                             ...initialData,
                             ...parsed,
                             metrics: {
-                                power: parsed.metrics?.power || initialData.metrics.power,
-                                steam: parsed.metrics?.steam || initialData.metrics.steam,
-                                flow: parsed.metrics?.flow || initialData.metrics.flow
+                                power: parsed.metrics?.power?.length >= 4 ? parsed.metrics.power : initialData.metrics.power,
+                                steam: parsed.metrics?.steam?.length >= 3 ? parsed.metrics.steam : initialData.metrics.steam,
+                                flow: parsed.metrics?.flow?.length >= 3 ? parsed.metrics.flow : initialData.metrics.flow
                             },
                             hourly: parsed.hourly || []
                         };
@@ -445,11 +451,11 @@
                             alert("Synced to Cloud!");
                         } catch (e) {
                             console.error(e);
-                            localStorage.setItem('rpcm_dashboard_data_v5', JSON.stringify(newData));
+                            localStorage.setItem('rpcm_dashboard_data_v6', JSON.stringify(newData));
                             alert("Cloud sync error. Saved locally.");
                         }
                     } else {
-                        localStorage.setItem('rpcm_dashboard_data_v5', JSON.stringify(newData));
+                        localStorage.setItem('rpcm_dashboard_data_v6', JSON.stringify(newData));
                         alert("Saved locally (Offline Mode).");
                     }
                     setIsSyncing(false);
