@@ -17,69 +17,59 @@
     
     <!-- SheetJS for Excel Processing -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Expose Firebase to global scope for React component to use
+        window.firebaseModules = { initializeApp, getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, getFirestore, doc, setDoc, onSnapshot };
+    </script>
     
     <!-- Tailwind Config for Custom Colors -->
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        gray: {
-                            750: '#2d3748',
-                            850: '#1a202c',
-                            950: '#0d1117',
+        try {
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            gray: {
+                                750: '#2d3748',
+                                850: '#1a202c',
+                                950: '#0d1117',
+                            },
+                            plant: {
+                                green: '#8cc63f', 
+                                orange: '#f59e0b',
+                                red: '#ef4444',
+                                blue: '#3b82f6',
+                                dark: '#111827'
+                            }
                         },
-                        plant: {
-                            green: '#8cc63f', 
-                            orange: '#f59e0b',
-                            red: '#ef4444',
-                            blue: '#3b82f6',
-                            dark: '#111827'
+                        fontFamily: {
+                            sans: ['Inter', 'system-ui', 'sans-serif'],
+                            mono: ['Fira Code', 'monospace'],
                         }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                        mono: ['Fira Code', 'monospace'],
                     }
                 }
             }
+        } catch (e) {
+            console.warn("Tailwind config failed to load immediately, using defaults.", e);
         }
     </script>
 
     <style>
         /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1f2937; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #4b5563; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #6b7280; 
-        }
-
-        /* Gauge Animation */
-        .gauge-path {
-            transition: stroke-dashoffset 1.5s ease-out;
-        }
-        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
         /* Chart Animation */
-        .chart-line {
-            stroke-dasharray: 1000;
-            stroke-dashoffset: 1000;
-            animation: drawLine 2s ease-out forwards;
-        }
-        
-        @keyframes drawLine {
-            to {
-                stroke-dashoffset: 0;
-            }
-        }
+        .chart-line { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawLine 2s ease-out forwards; }
+        @keyframes drawLine { to { stroke-dashoffset: 0; } }
     </style>
 </head>
 <body class="bg-gray-950 text-gray-100 antialiased">
@@ -88,7 +78,7 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- Icons Components (Inlined for stability) ---
+        // --- Icons Components (Inlined) ---
         const Icons = {
             Zap: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
             Activity: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
@@ -104,7 +94,8 @@
             Box: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
             ShieldAlert: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
             TrendingUp: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
-            Upload: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+            Cloud: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
         };
 
         // --- RPCM LOGO COMPONENT ---
@@ -117,12 +108,11 @@
             </svg>
         );
 
-        // --- Custom SVG Gauge Component ---
+        // --- GAUGE COMPONENT ---
         const Gauge = ({ value, max, title, unit, color, icon: Icon }) => {
             const radius = 80;
             const stroke = 12;
             const normalizedValue = Math.min(Math.max(value, 0), max);
-            
             const [displayValue, setDisplayValue] = useState(0);
 
             useEffect(() => {
@@ -151,18 +141,10 @@
                             <div className={`w-2 h-2 rounded-full ${percentage > 0.9 ? 'bg-plant-red animate-pulse' : 'bg-plant-green'}`}></div>
                         </div>
                     </div>
-
                     <div className="relative w-48 h-28 z-10">
                         <svg viewBox="0 0 200 110" className="w-full h-full">
                             <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#374151" strokeWidth={stroke} strokeLinecap="round"/>
-                            <path 
-                                d="M 20 100 A 80 80 0 0 1 180 100" fill="none" 
-                                stroke={`url(#gradient-${title.replace(/[^a-zA-Z0-9]/g, '')})`}
-                                strokeWidth={stroke} strokeLinecap="round"
-                                strokeDasharray={`${Math.PI * 80}`}
-                                strokeDashoffset={`${Math.PI * 80 * (1 - percentage)}`}
-                                className="gauge-path"
-                            />
+                            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke={`url(#gradient-${title.replace(/[^a-zA-Z0-9]/g, '')})`} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${Math.PI * 80}`} strokeDashoffset={`${Math.PI * 80 * (1 - percentage)}`} className="gauge-path"/>
                             <defs>
                                 <linearGradient id={`gradient-${title.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="100%" y2="0%">
                                     <stop offset="0%" stopColor={color === 'text-plant-green' ? '#8cc63f' : color === 'text-plant-orange' ? '#d97706' : '#2563eb'} />
@@ -177,12 +159,11 @@
                             <div className="text-gray-500 text-sm font-medium">{unit}</div>
                         </div>
                     </div>
-                    <div className={`absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-transparent to-${color.replace('text-', '')}/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`}></div>
                 </div>
             );
         };
 
-        // --- Trend Chart Component ---
+        // --- TREND CHART COMPONENT ---
         const TrendChart = ({ data, dataKey, color, unit }) => {
             const height = 200;
             const width = 800;
@@ -213,7 +194,7 @@
             );
         };
 
-        // --- Production Stat Card Component ---
+        // --- PRODUCTION CARD ---
         const ProductionCard = ({ title, actual, target, unit }) => {
             const percent = (actual / target) * 100;
             const isLow = percent < 90; 
@@ -240,7 +221,7 @@
             );
         };
 
-        // --- KPI Table Row ---
+        // --- KPI ROW ---
         const KpiRow = ({ label, value, target, unit, inverse = false }) => {
             const diff = ((value - target) / target) * 100;
             const isGood = inverse ? value <= target : value >= target;
@@ -260,86 +241,100 @@
             );
         };
 
-        // --- Main Dashboard Component ---
+        // --- MAIN DASHBOARD COMPONENT ---
         const Dashboard = () => {
             const [isSidebarOpen, setSidebarOpen] = useState(false);
             const [trendTab, setTrendTab] = useState('power');
             const fileInputRef = useRef(null);
-            const [lastUpdated, setLastUpdated] = useState('21-Nov-2025');
+            const [lastUpdated, setLastUpdated] = useState('Waiting for Cloud Data...');
+            const [user, setUser] = useState(null);
+            const [isSyncing, setIsSyncing] = useState(false);
 
-            // EXTENDED STATE including HSSE and Efficiency
-            const [dashboardData, setDashboardData] = useState({
+            // --- INITIAL DATA STATE ---
+            const initialData = {
                 production: [
-                    { id: 'cta', title: 'CTA Production', actual: 1555, target: 1808, unit: 'tonnes' },
-                    { id: 'pta', title: 'PTA Production', actual: 1291, target: 1857, unit: 'tonnes' },
+                    { id: 'cta', title: 'CTA Production', actual: 0, target: 1808, unit: 'tonnes' },
+                    { id: 'pta', title: 'PTA Production', actual: 0, target: 1857, unit: 'tonnes' },
                 ],
-                availability: { actual: 86.0, target: 97.0 },
+                availability: { actual: 0, target: 97.0 },
                 metrics: {
                     power: [
-                        { id: 'p1', title: 'Plant Power', value: 14.59, max: 20, unit: 'MW', icon: 'Zap' },
-                        { id: 'p2', title: 'Power Gen', value: 9.02, max: 15, unit: 'MW', icon: 'Zap' },
+                        { id: 'p1', title: 'Plant Power', value: 0, max: 20, unit: 'MW', icon: 'Zap' },
+                        { id: 'p2', title: 'Power Gen', value: 0, max: 15, unit: 'MW', icon: 'Zap' },
                     ],
                     steam: [
-                        { id: 's1', title: 'Steam to DHT', value: 65.45, max: 100, unit: 'TPH', icon: 'Thermometer' },
-                        { id: 's3', title: '4.4 Steam Header', value: 4.26, max: 6, unit: 'kg/cm2', icon: 'GaugeIcon' },
+                        { id: 's1', title: 'Steam to DHT', value: 0, max: 100, unit: 'TPH', icon: 'Thermometer' },
+                        { id: 's3', title: '4.4 Steam Header', value: 0, max: 6, unit: 'kg/cm2', icon: 'GaugeIcon' },
                     ],
                     flow: [
-                        { id: 'f1', title: 'PX Rate', value: 48.09, max: 60, unit: 'TPH', icon: 'Droplet' },
-                        { id: 'f2', title: 'ADM 2 Flow', value: 46.96, max: 60, unit: 'TPH', icon: 'Droplets' },
+                        { id: 'f1', title: 'PX Rate', value: 0, max: 60, unit: 'TPH', icon: 'Droplet' },
+                        { id: 'f2', title: 'ADM 2 Flow', value: 0, max: 60, unit: 'TPH', icon: 'Droplets' },
                     ]
                 },
-                // New HSSE Data
-                hsse: {
-                    alarms: 0,
-                    bypass: 2,
-                    limit: 14,
-                    leaks: { toxic: 0, hac: 0, hotOil: 0, gas: 0 }
-                },
-                // New Efficiency Data
+                hsse: { alarms: 0, bypass: 0, limit: 0, leaks: { toxic: 0, hac: 0, hotOil: 0, gas: 0 } },
                 efficiency: {
-                    power: { val: 291, tgt: 175 },
-                    hac: { val: 28.8, tgt: 28.3 },
-                    px: { val: 15.45, tgt: 14.0 },
-                    catalyst: { val: 0.44, tgt: 0.42 },
-                    wwt: { val: 49, tgt: 200 },
-                    water: { val: 149, unit: 'm3' }
+                    power: { val: 0, tgt: 175 }, hac: { val: 0, tgt: 28.3 }, px: { val: 0, tgt: 14.0 },
+                    catalyst: { val: 0, tgt: 0.42 }, wwt: { val: 0, tgt: 200 }, water: { val: 0, unit: 'm3' }
                 },
-                hourly: [
-                    { time: '06:00', power: 14.2, steam: 63.5, flow: 47.5 },
-                    { time: '07:00', power: 14.4, steam: 64.2, flow: 48.1 },
-                    { time: '08:00', power: 14.8, steam: 65.8, flow: 49.0 },
-                    { time: '09:00', power: 14.9, steam: 66.1, flow: 48.5 },
-                    { time: '10:00', power: 14.6, steam: 65.4, flow: 48.0 },
-                    { time: '11:00', power: 14.5, steam: 65.0, flow: 47.8 },
-                    { time: '12:00', power: 14.7, steam: 65.5, flow: 48.2 },
-                    { time: '13:00', power: 15.0, steam: 66.5, flow: 49.2 },
-                    { time: '14:00', power: 14.8, steam: 66.0, flow: 48.8 },
-                    { time: '15:00', power: 14.5, steam: 65.2, flow: 48.0 },
-                    { time: '16:00', power: 14.3, steam: 64.8, flow: 47.6 },
-                    { time: '17:00', power: 14.6, steam: 65.1, flow: 47.9 },
-                    { time: '18:00', power: 14.4, steam: 65.3, flow: 48.1 },
-                ]
-            });
+                hourly: []
+            };
+            const [dashboardData, setDashboardData] = useState(initialData);
 
-            // Load data from LocalStorage on startup
+            // --- FIREBASE SETUP ---
             useEffect(() => {
-                const stored = localStorage.getItem('rpcm_dashboard_data_v2');
-                if (stored) {
-                    try {
-                        const parsed = JSON.parse(stored);
-                        setDashboardData(prev => ({...prev, ...parsed}));
-                        setLastUpdated('Restored from Storage');
-                    } catch (e) { console.error("Storage Load Failed", e); }
-                }
+                const { initializeApp, getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, getFirestore, doc, onSnapshot } = window.firebaseModules;
+                
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                const db = getFirestore(app);
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+                // 1. Authentication
+                const initAuth = async () => {
+                  if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                  } else {
+                    await signInAnonymously(auth);
+                  }
+                };
+                initAuth();
+
+                // 2. Listen for Auth State
+                const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
+                    if (u) {
+                        setUser(u);
+                        
+                        // 3. Setup Real-time Listener (Only when authenticated)
+                        // Path corrected: 6 segments (Collection/Doc/Collection/Doc/Collection/Doc)
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'dashboard_state', 'current_state');
+                        const unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
+                            if (docSnap.exists()) {
+                                const data = docSnap.data();
+                                setDashboardData(data.dashboardData);
+                                setLastUpdated(data.lastUpdated);
+                                setIsSyncing(false);
+                            } else {
+                                setLastUpdated("No cloud data yet.");
+                            }
+                        });
+                        return () => unsubscribeSnapshot();
+                    }
+                });
+
+                return () => unsubscribeAuth();
             }, []);
 
-            // --- EXCEL PARSING LOGIC ---
+            // --- EXCEL UPLOAD & CLOUD SYNC ---
             const handleFileUpload = (e) => {
+                if (!user) { alert("Wait for connection..."); return; }
+                
                 const file = e.target.files[0];
                 if (!file) return;
+                setIsSyncing(true);
 
                 const reader = new FileReader();
-                reader.onload = (evt) => {
+                reader.onload = async (evt) => {
                     const bstr = evt.target.result;
                     const wb = XLSX.read(bstr, { type: 'binary' });
                     const wsName = wb.SheetNames[0];
@@ -352,9 +347,7 @@
                             const cellText = row[0].toString().toLowerCase();
                             if (keywords.some(k => cellText.includes(k.toLowerCase()))) {
                                 for (let i = 1; i < row.length; i++) {
-                                    if (row[i] && !isNaN(parseFloat(row[i]))) {
-                                        return parseFloat(row[i]);
-                                    }
+                                    if (row[i] && !isNaN(parseFloat(row[i]))) return parseFloat(row[i]);
                                 }
                             }
                         }
@@ -363,48 +356,52 @@
 
                     const newData = { ...dashboardData };
                     
-                    // 1. Production & Metrics (Existing)
-                    const ctaVal = findValue(['CTA Production', 'CTA Actual']);
-                    if (ctaVal) newData.production[0].actual = ctaVal;
-                    const ptaVal = findValue(['PTA Production', 'PTA Actual']);
-                    if (ptaVal) newData.production[1].actual = ptaVal;
-                    const availVal = findValue(['Availability', 'Plant Availability']);
-                    if (availVal) newData.availability.actual = availVal;
-                    const powerVal = findValue(['Plant Power']);
-                    if (powerVal) newData.metrics.power[0].value = powerVal;
-                    const steamVal = findValue(['Steam to DHT']);
-                    if (steamVal) newData.metrics.steam[0].value = steamVal;
-                    const pxVal = findValue(['PX Rate']);
-                    if (pxVal) newData.metrics.flow[0].value = pxVal;
+                    // Parse Data (Same mapping logic)
+                    const ctaVal = findValue(['CTA Production', 'CTA Actual']); if (ctaVal) newData.production[0].actual = ctaVal;
+                    const ptaVal = findValue(['PTA Production', 'PTA Actual']); if (ptaVal) newData.production[1].actual = ptaVal;
+                    const availVal = findValue(['Availability', 'Plant Availability']); if (availVal) newData.availability.actual = availVal;
+                    const powerVal = findValue(['Plant Power']); if (powerVal) newData.metrics.power[0].value = powerVal;
+                    const steamVal = findValue(['Steam to DHT']); if (steamVal) newData.metrics.steam[0].value = steamVal;
+                    const pxVal = findValue(['PX Rate']); if (pxVal) newData.metrics.flow[0].value = pxVal;
+                    
+                    const alarmVal = findValue(['DCS Alarm']); if (alarmVal !== null) newData.hsse.alarms = alarmVal;
+                    const bypassVal = findValue(['Safety Bypass']); if (bypassVal !== null) newData.hsse.bypass = bypassVal;
+                    const limitVal = findValue(['Beyond Operating Limit']); if (limitVal !== null) newData.hsse.limit = limitVal;
+                    
+                    const effPower = findValue(['Total Power']); if (effPower !== null) newData.efficiency.power.val = effPower;
+                    const effHac = findValue(['HAC Cons']); if (effHac !== null) newData.efficiency.hac.val = effHac;
+                    const effPx = findValue(['Excess PX']); if (effPx !== null) newData.efficiency.px.val = effPx;
+                    const effCat = findValue(['CMB Catalyst']); if (effCat !== null) newData.efficiency.catalyst.val = effCat;
+                    const effWwt = findValue(['WWT COD']); if (effWwt !== null) newData.efficiency.wwt.val = effWwt;
+                    const effWater = findValue(['Demin Water']); if (effWater !== null) newData.efficiency.water.val = effWater;
 
-                    // 2. HSSE Data (New)
-                    const alarmVal = findValue(['DCS Alarm']);
-                    if (alarmVal !== null) newData.hsse.alarms = alarmVal;
-                    const bypassVal = findValue(['Safety Bypass']);
-                    if (bypassVal !== null) newData.hsse.bypass = bypassVal;
-                    const limitVal = findValue(['Beyond Operating Limit', 'Operating Limit']);
-                    if (limitVal !== null) newData.hsse.limit = limitVal;
+                    // Parse Hourly Data if present in Excel (assuming sheet 2 or strictly formatted)
+                    // For simplicity in this version, we keep existing hourly or add parsing logic if needed.
+                    // Currently keeping existing hourly unless Excel has it.
 
-                    // 3. Efficiency Data (New)
-                    const effPower = findValue(['Total Power']);
-                    if (effPower !== null) newData.efficiency.power.val = effPower;
-                    const effHac = findValue(['HAC Cons', 'HAC Cons.']);
-                    if (effHac !== null) newData.efficiency.hac.val = effHac;
-                    const effPx = findValue(['Excess PX']);
-                    if (effPx !== null) newData.efficiency.px.val = effPx;
-                    const effCat = findValue(['CMB Catalyst']);
-                    if (effCat !== null) newData.efficiency.catalyst.val = effCat;
-                    const effWwt = findValue(['WWT COD']);
-                    if (effWwt !== null) newData.efficiency.wwt.val = effWwt;
-                    const effWater = findValue(['Demin Water']);
-                    if (effWater !== null) newData.efficiency.water.val = effWater;
-
-                    // Save and Update
-                    setDashboardData(newData);
                     const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-                    setLastUpdated(today);
-                    localStorage.setItem('rpcm_dashboard_data_v2', JSON.stringify(newData));
-                    alert("Dashboard updated successfully from Excel (including HSSE & Efficiency)!");
+                    
+                    // --- FIREBASE SAVE ---
+                    const { getFirestore, doc, setDoc } = window.firebaseModules;
+                    const firebaseConfig = JSON.parse(__firebase_config);
+                    const app = window.firebaseModules.initializeApp(firebaseConfig);
+                    const db = getFirestore(app);
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    
+                    try {
+                        // Path corrected: 6 segments
+                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'dashboard_state', 'current_state'), {
+                            dashboardData: newData,
+                            lastUpdated: today,
+                            updatedBy: user.uid
+                        });
+                        alert("Cloud Update Successful! Everyone can see this now.");
+                    } catch (error) {
+                        console.error("Cloud Save Error:", error);
+                        alert("Failed to sync to cloud. Check console.");
+                    } finally {
+                        setIsSyncing(false);
+                    }
                 };
                 reader.readAsBinaryString(file);
             };
@@ -415,14 +412,7 @@
 
             return (
                 <div className="flex h-screen overflow-hidden bg-black">
-                    {/* Hidden File Input */}
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        onChange={handleFileUpload} 
-                        accept=".xlsx, .xls" 
-                        className="hidden" 
-                    />
+                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".xlsx, .xls" className="hidden" />
 
                     {/* Sidebar */}
                     <aside className="hidden md:flex w-64 flex-col border-r border-gray-800 bg-gray-900">
@@ -436,96 +426,50 @@
                             </div>
                         </div>
                         <nav className="flex-1 p-4 space-y-2">
-                            <a href="#" className="flex items-center gap-3 px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 shadow-sm">
-                                <Icons.LayoutDashboard size={20} />
-                                <span className="font-medium">Overview</span>
-                            </a>
-                            <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-colors">
-                                <Icons.TrendingUp size={20} />
-                                <span className="font-medium">Hourly Trends</span>
-                            </a>
-                            <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-colors">
-                                <Icons.Calendar size={20} />
-                                <span className="font-medium">Reports</span>
-                            </a>
-                            <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-colors">
-                                <Icons.Settings size={20} />
-                                <span className="font-medium">Settings</span>
-                            </a>
+                            <a href="#" className="flex items-center gap-3 px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 shadow-sm"><Icons.LayoutDashboard size={20} /><span className="font-medium">Overview</span></a>
+                            <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-colors"><Icons.TrendingUp size={20} /><span className="font-medium">Hourly Trends</span></a>
+                            <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-colors"><Icons.Calendar size={20} /><span className="font-medium">Reports</span></a>
+                            <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-colors"><Icons.Settings size={20} /><span className="font-medium">Settings</span></a>
                         </nav>
                     </aside>
 
                     {/* Main Content */}
                     <main className="flex-1 flex flex-col overflow-hidden relative">
-                        
-                        {/* Header */}
                         <header className="h-16 border-b border-gray-800 bg-gray-900/50 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-20">
                             <div className="flex items-center gap-4">
-                                <button className="md:hidden text-gray-400" onClick={() => setSidebarOpen(!isSidebarOpen)}>
-                                    <Icons.Menu />
-                                </button>
+                                <button className="md:hidden text-gray-400" onClick={() => setSidebarOpen(!isSidebarOpen)}><Icons.Menu /></button>
                                 <div className="flex items-center gap-3">
-                                    <div className="md:hidden">
-                                        <RpcmLogo className="w-8 h-8 text-plant-green" />
-                                    </div>
+                                    <div className="md:hidden"><RpcmLogo className="w-8 h-8 text-plant-green" /></div>
                                     <div>
                                         <h1 className="text-lg font-semibold text-white">Plant Overview</h1>
-                                        <p className="text-xs text-gray-400">Report Date: {lastUpdated} | Day Shift</p>
+                                        <p className="text-xs text-gray-400">Report Date: {lastUpdated}</p>
                                     </div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
-                                {/* Import Button */}
-                                <button 
-                                    onClick={triggerUpload}
-                                    className="flex items-center gap-2 px-3 py-1.5 bg-plant-blue hover:bg-blue-600 text-white rounded-md text-sm font-medium transition-colors"
-                                >
+                                <button onClick={triggerUpload} className={`flex items-center gap-2 px-3 py-1.5 ${isSyncing ? 'bg-gray-600 cursor-wait' : 'bg-plant-blue hover:bg-blue-600'} text-white rounded-md text-sm font-medium transition-colors`}>
                                     <Icons.Upload size={16} />
-                                    <span className="hidden sm:inline">Import Report</span>
+                                    <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Import Report'}</span>
                                 </button>
-                                <button className="p-2 text-gray-400 hover:text-white relative">
-                                    <Icons.Bell size={20} />
-                                    <span className="absolute top-2 right-2 w-2 h-2 bg-plant-red rounded-full border-2 border-gray-900"></span>
-                                </button>
+                                <button className="p-2 text-gray-400 hover:text-white relative"><Icons.Bell size={20} /><span className="absolute top-2 right-2 w-2 h-2 bg-plant-red rounded-full border-2 border-gray-900"></span></button>
                             </div>
                         </header>
 
-                        {/* Dashboard Content */}
                         <div className="flex-1 overflow-y-auto p-6">
                             <div className="max-w-7xl mx-auto space-y-8">
-
-                                {/* ROW 1: PRODUCTION SUMMARY */}
                                 <section>
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <Icons.Box size={20} className="text-white" />
-                                        <h2 className="text-lg font-bold text-white">Daily Production Report</h2>
-                                    </div>
+                                    <div className="flex items-center gap-2 mb-4"><Icons.Box size={20} className="text-white" /><h2 className="text-lg font-bold text-white">Daily Production Report</h2></div>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        {dashboardData.production.map(p => (
-                                            <ProductionCard key={p.id} {...p} />
-                                        ))}
+                                        {dashboardData.production.map(p => <ProductionCard key={p.id} {...p} />)}
                                         <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-lg flex flex-col justify-between">
-                                            <div>
-                                                <div className="text-gray-400 text-xs uppercase tracking-wider mb-1 font-medium">Plant Availability</div>
-                                                <div className="text-3xl font-bold text-white">{dashboardData.availability.actual}%</div>
-                                            </div>
-                                            <div>
-                                                <div className="text-xs text-gray-500">Target: {dashboardData.availability.target}%</div>
-                                                <div className="w-full bg-gray-800 rounded-full h-1.5 mt-2 overflow-hidden">
-                                                    <div className="h-full bg-plant-orange rounded-full" style={{width: '86%'}}></div>
-                                                </div>
-                                                <div className="text-xs text-orange-400 mt-1">Below Target</div>
-                                            </div>
+                                            <div><div className="text-gray-400 text-xs uppercase tracking-wider mb-1 font-medium">Plant Availability</div><div className="text-3xl font-bold text-white">{dashboardData.availability.actual}%</div></div>
+                                            <div><div className="text-xs text-gray-500">Target: {dashboardData.availability.target}%</div><div className="w-full bg-gray-800 rounded-full h-1.5 mt-2 overflow-hidden"><div className="h-full bg-plant-orange rounded-full" style={{width: `${Math.min(dashboardData.availability.actual, 100)}%`}}></div></div><div className="text-xs text-orange-400 mt-1">Status</div></div>
                                         </div>
                                     </div>
                                 </section>
 
-                                {/* ROW 2: REAL TIME GAUGES */}
                                 <section>
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <div className="w-1 h-6 bg-plant-blue rounded-full"></div>
-                                        <h2 className="text-lg font-bold text-white">Real-Time Monitoring</h2>
-                                    </div>
+                                    <div className="flex items-center gap-2 mb-4"><div className="w-1 h-6 bg-plant-blue rounded-full"></div><h2 className="text-lg font-bold text-white">Real-Time Monitoring</h2></div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                                         {dashboardData.metrics.power.map(m => <Gauge key={m.id} {...m} color="text-plant-green" icon={Icons[m.icon]} />)}
                                         {dashboardData.metrics.steam.map(m => <Gauge key={m.id} {...m} color="text-plant-orange" icon={Icons[m.icon]} />)}
@@ -533,27 +477,13 @@
                                     </div>
                                 </section>
 
-                                {/* ROW 3: HOURLY TRENDS SECTION */}
                                 <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-                                        <div className="flex items-center gap-2">
-                                            <Icons.TrendingUp className="text-plant-green" />
-                                            <h3 className="font-bold text-white">Hourly Trends (06:00 - 18:00)</h3>
-                                        </div>
-                                        {/* Tabs */}
+                                        <div className="flex items-center gap-2"><Icons.TrendingUp className="text-plant-green" /><h3 className="font-bold text-white">Hourly Trends (06:00 - 18:00)</h3></div>
                                         <div className="flex gap-2 bg-gray-800 p-1 rounded-lg">
-                                            <button 
-                                                onClick={() => setTrendTab('power')}
-                                                className={`px-4 py-1.5 rounded text-xs font-medium transition-colors ${trendTab === 'power' ? 'bg-plant-green text-white shadow' : 'text-gray-400 hover:text-white'}`}
-                                            >Power (MW)</button>
-                                            <button 
-                                                onClick={() => setTrendTab('steam')}
-                                                className={`px-4 py-1.5 rounded text-xs font-medium transition-colors ${trendTab === 'steam' ? 'bg-plant-orange text-white shadow' : 'text-gray-400 hover:text-white'}`}
-                                            >Steam (TPH)</button>
-                                            <button 
-                                                onClick={() => setTrendTab('flow')}
-                                                className={`px-4 py-1.5 rounded text-xs font-medium transition-colors ${trendTab === 'flow' ? 'bg-plant-blue text-white shadow' : 'text-gray-400 hover:text-white'}`}
-                                            >Flow (TPH)</button>
+                                            <button onClick={() => setTrendTab('power')} className={`px-4 py-1.5 rounded text-xs font-medium transition-colors ${trendTab === 'power' ? 'bg-plant-green text-white shadow' : 'text-gray-400 hover:text-white'}`}>Power</button>
+                                            <button onClick={() => setTrendTab('steam')} className={`px-4 py-1.5 rounded text-xs font-medium transition-colors ${trendTab === 'steam' ? 'bg-plant-orange text-white shadow' : 'text-gray-400 hover:text-white'}`}>Steam</button>
+                                            <button onClick={() => setTrendTab('flow')} className={`px-4 py-1.5 rounded text-xs font-medium transition-colors ${trendTab === 'flow' ? 'bg-plant-blue text-white shadow' : 'text-gray-400 hover:text-white'}`}>Flow</button>
                                         </div>
                                     </div>
                                     <div className="h-64 w-full">
@@ -563,50 +493,17 @@
                                     </div>
                                 </section>
 
-                                {/* ROW 4: HSSE & EFFICIENCY SPLIT */}
                                 <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                    {/* HSSE KPI */}
                                     <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                                        <div className="flex items-center gap-2 mb-6 border-b border-gray-800 pb-4">
-                                            <Icons.ShieldAlert className="text-plant-red" />
-                                            <h3 className="font-bold text-white">HSSE KPI Tracking</h3>
-                                        </div>
+                                        <div className="flex items-center gap-2 mb-6 border-b border-gray-800 pb-4"><Icons.ShieldAlert className="text-plant-red" /><h3 className="font-bold text-white">HSSE KPI Tracking</h3></div>
                                         <div className="space-y-4">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-gray-400 text-sm">DCS Alarm & Interlock</span>
-                                                <span className="text-green-400 font-mono font-bold">{dashboardData.hsse.alarms}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-gray-400 text-sm">Safety Bypass</span>
-                                                <span className="text-orange-400 font-mono font-bold">{dashboardData.hsse.bypass}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-gray-400 text-sm">Beyond Operating Limit</span>
-                                                <div className="text-right">
-                                                    <span className="text-red-400 font-mono font-bold">{dashboardData.hsse.limit}</span>
-                                                    <span className="text-xs text-gray-600 block">Today</span>
-                                                </div>
-                                            </div>
-                                            <div className="mt-4 pt-4 border-t border-gray-800">
-                                                <div className="text-xs text-gray-500 mb-2">Leaks Recorded</div>
-                                                <div className="grid grid-cols-4 gap-2 text-center">
-                                                    {['Toxic', 'HAC', 'Hot Oil', 'Gas'].map(type => (
-                                                        <div key={type} className="bg-gray-800 rounded p-2">
-                                                            <div className="text-green-400 font-bold text-sm">0</div>
-                                                            <div className="text-[10px] text-gray-500">{type}</div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
+                                            <div className="flex justify-between items-center"><span className="text-gray-400 text-sm">DCS Alarm & Interlock</span><span className="text-green-400 font-mono font-bold">{dashboardData.hsse.alarms}</span></div>
+                                            <div className="flex justify-between items-center"><span className="text-gray-400 text-sm">Safety Bypass</span><span className="text-orange-400 font-mono font-bold">{dashboardData.hsse.bypass}</span></div>
+                                            <div className="flex justify-between items-center"><span className="text-gray-400 text-sm">Beyond Operating Limit</span><div className="text-right"><span className="text-red-400 font-mono font-bold">{dashboardData.hsse.limit}</span><span className="text-xs text-gray-600 block">Today</span></div></div>
                                         </div>
                                     </div>
-
-                                    {/* Consumption/Efficiency */}
                                     <div className="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-6">
-                                        <div className="flex items-center gap-2 mb-6 border-b border-gray-800 pb-4">
-                                            <Icons.Activity className="text-plant-blue" />
-                                            <h3 className="font-bold text-white">Consumption Efficiency</h3>
-                                        </div>
+                                        <div className="flex items-center gap-2 mb-6 border-b border-gray-800 pb-4"><Icons.Activity className="text-plant-blue" /><h3 className="font-bold text-white">Consumption Efficiency</h3></div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
                                             <div>
                                                 <h4 className="text-xs text-gray-500 uppercase mb-3 font-semibold">Oxidation</h4>
@@ -618,23 +515,21 @@
                                                 <h4 className="text-xs text-gray-500 uppercase mb-3 font-semibold md:mt-0 mt-4">WWT & Utilities</h4>
                                                 <KpiRow label="CMB Catalyst" value={dashboardData.efficiency.catalyst.val} target={dashboardData.efficiency.catalyst.tgt} unit="kg/t" inverse={true} />
                                                 <KpiRow label="WWT COD" value={dashboardData.efficiency.wwt.val} target={dashboardData.efficiency.wwt.tgt} unit="ppm" inverse={true} />
-                                                <div className="py-3 flex justify-between items-center">
-                                                    <span className="text-sm text-gray-300">Demin Water ISBL</span>
-                                                    <span className="text-white font-mono font-bold">{dashboardData.efficiency.water.val} <span className="text-xs text-gray-500">m3</span></span>
-                                                </div>
+                                                <div className="py-3 flex justify-between items-center"><span className="text-sm text-gray-300">Demin Water ISBL</span><span className="text-white font-mono font-bold">{dashboardData.efficiency.water.val} <span className="text-xs text-gray-500">m3</span></span></div>
                                             </div>
                                         </div>
                                     </div>
-
                                 </section>
-
                             </div>
                             
-                            <footer className="mt-12 text-center text-gray-600 text-sm pb-6">
-                                <p>RPCM Operations Dashboard • Data Source: {lastUpdated} Report</p>
+                            <footer className="mt-12 text-center text-gray-600 text-sm pb-6 flex items-center justify-center gap-2">
+                                <p>RPCM Operations Dashboard • Data Source: {lastUpdated}</p>
+                                <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-900 rounded border border-gray-800">
+                                    <div className={`w-2 h-2 rounded-full ${user ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`}></div>
+                                    <span className="text-xs text-gray-400">{user ? 'Live Cloud Sync' : 'Connecting...'}</span>
+                                </div>
                             </footer>
                         </div>
-
                     </main>
                 </div>
             );
