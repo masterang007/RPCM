@@ -75,15 +75,14 @@
             measurementId: "G-V7Y09MT8ET"
         };
 
-        // --- CONFIG RESOLUTION LOGIC (Prevents Errors) ---
+        // --- CONFIG RESOLUTION LOGIC ---
         let activeConfig = null;
-        let configSource = 'offline'; // 'user', 'canvas', 'offline'
+        let configSource = 'offline';
 
         if (USER_FIREBASE_CONFIG) {
             activeConfig = USER_FIREBASE_CONFIG;
             configSource = 'user';
         } else if (typeof __firebase_config !== 'undefined') {
-            // Fallback for Canvas preview environment
             try { activeConfig = JSON.parse(__firebase_config); configSource = 'canvas'; } catch(e) {}
         }
 
@@ -313,7 +312,7 @@
             const fallbackToLocal = () => {
                 setIsCloudAvailable(false);
                 setLastUpdated("Local Mode (Offline)");
-                const stored = localStorage.getItem('rpcm_dashboard_data_v8');
+                const stored = localStorage.getItem('rpcm_dashboard_data_v9');
                 if (stored) {
                     try {
                         const parsed = JSON.parse(stored);
@@ -451,11 +450,11 @@
                             alert("Synced to Cloud!");
                         } catch (e) {
                             console.error(e);
-                            localStorage.setItem('rpcm_dashboard_data_v8', JSON.stringify(newData));
+                            localStorage.setItem('rpcm_dashboard_data_v9', JSON.stringify(newData));
                             alert("Cloud sync error. Saved locally.");
                         }
                     } else {
-                        localStorage.setItem('rpcm_dashboard_data_v8', JSON.stringify(newData));
+                        localStorage.setItem('rpcm_dashboard_data_v9', JSON.stringify(newData));
                         alert("Saved locally (Offline Mode).");
                     }
                     setIsSyncing(false);
