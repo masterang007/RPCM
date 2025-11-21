@@ -310,40 +310,73 @@
                 reader.onload = async (evt) => {
                     const bstr = evt.target.result;
                     const wb = XLSX.read(bstr, { type: 'binary' });
-                    const wsName = wb.SheetNames[0];
-                    const ws = wb.Sheets[wsName];
-                    const rawData = XLSX.utils.sheet_to_json(ws, { header: 1 });
-
-                    const findValue = (keywords) => {
-                        for (let row of rawData) {
-                            if (!row[0]) continue;
-                            const cellText = row[0].toString().toLowerCase();
-                            if (keywords.some(k => cellText.includes(k.toLowerCase()))) {
-                                for (let i = 1; i < row.length; i++) {
-                                    if (row[i] && !isNaN(parseFloat(row[i]))) return parseFloat(row[i]);
+                    
+                    const newData = { ...dashboardData };
+                    
+                    // 1. READ SUMMARY SHEET (Same as before)
+                    const wsMain = wb.Sheets[wb.SheetNames[0]];
+                    if (wsMain) {
+                        const rawData = XLSX.utils.sheet_to_json(wsMain, { header: 1 });
+                        const findValue = (keywords) => {
+                            for (let row of rawData) {
+                                if (!row[0]) continue;
+                                const cellText = row[0].toString().toLowerCase();
+                                if (keywords.some(k => cellText.includes(k.toLowerCase()))) {
+                                    for (let i = 1; i < row.length; i++) {
+                                        if (row[i] && !isNaN(parseFloat(row[i]))) return parseFloat(row[i]);
+                                    }
                                 }
                             }
-                        }
-                        return null;
-                    };
+                            return null;
+                        };
+                        // ... (existing summary parsing logic)
+                        const ctaVal = findValue(['CTA Production', 'CTA Actual']); if (ctaVal) newData.production[0].actual = ctaVal;
+                        const ptaVal = findValue(['PTA Production', 'PTA Actual']); if (ptaVal) newData.production[1].actual = ptaVal;
+                        const availVal = findValue(['Availability', 'Plant Availability']); if (availVal) newData.availability.actual = availVal;
+                        const powerVal = findValue(['Plant Power']); if (powerVal) newData.metrics.power[0].value = powerVal;
+                        const steamVal = findValue(['Steam to DHT']); if (steamVal) newData.metrics.steam[0].value = steamVal;
+                        const pxVal = findValue(['PX Rate']); if (pxVal) newData.metrics.flow[0].value = pxVal;
+                        const alarmVal = findValue(['DCS Alarm']); if (alarmVal !== null) newData.hsse.alarms = alarmVal;
+                        const bypassVal = findValue(['Safety Bypass']); if (bypassVal !== null) newData.hsse.bypass = bypassVal;
+                        const limitVal = findValue(['Beyond Operating Limit']); if (limitVal !== null) newData.hsse.limit = limitVal;
+                        const effPower = findValue(['Total Power']); if (effPower !== null) newData.efficiency.power.val = effPower;
+                        const effHac = findValue(['HAC Cons']); if (effHac !== null) newData.efficiency.hac.val = effHac;
+                        const effPx = findValue(['Excess PX']); if (effPx !== null) newData.efficiency.px.val = effPx;
+                        const effCat = findValue(['CMB Catalyst']); if (effCat !== null) newData.efficiency.catalyst.val = effCat;
+                        const effWwt = findValue(['WWT COD']); if (effWwt !== null) newData.efficiency.wwt.val = effWwt;
+                        const effWater = findValue(['Demin Water']); if (effWater !== null) newData.efficiency.water.val = effWater;
+                    }
 
-                    const newData = { ...dashboardData };
-                    // Parsing Logic
-                    const ctaVal = findValue(['CTA Production', 'CTA Actual']); if (ctaVal) newData.production[0].actual = ctaVal;
-                    const ptaVal = findValue(['PTA Production', 'PTA Actual']); if (ptaVal) newData.production[1].actual = ptaVal;
-                    const availVal = findValue(['Availability', 'Plant Availability']); if (availVal) newData.availability.actual = availVal;
-                    const powerVal = findValue(['Plant Power']); if (powerVal) newData.metrics.power[0].value = powerVal;
-                    const steamVal = findValue(['Steam to DHT']); if (steamVal) newData.metrics.steam[0].value = steamVal;
-                    const pxVal = findValue(['PX Rate']); if (pxVal) newData.metrics.flow[0].value = pxVal;
-                    const alarmVal = findValue(['DCS Alarm']); if (alarmVal !== null) newData.hsse.alarms = alarmVal;
-                    const bypassVal = findValue(['Safety Bypass']); if (bypassVal !== null) newData.hsse.bypass = bypassVal;
-                    const limitVal = findValue(['Beyond Operating Limit']); if (limitVal !== null) newData.hsse.limit = limitVal;
-                    const effPower = findValue(['Total Power']); if (effPower !== null) newData.efficiency.power.val = effPower;
-                    const effHac = findValue(['HAC Cons']); if (effHac !== null) newData.efficiency.hac.val = effHac;
-                    const effPx = findValue(['Excess PX']); if (effPx !== null) newData.efficiency.px.val = effPx;
-                    const effCat = findValue(['CMB Catalyst']); if (effCat !== null) newData.efficiency.catalyst.val = effCat;
-                    const effWwt = findValue(['WWT COD']); if (effWwt !== null) newData.efficiency.wwt.val = effWwt;
-                    const effWater = findValue(['Demin Water']); if (effWater !== null) newData.efficiency.water.val = effWater;
+                    // 2. READ HOURLY LOGS SHEET (New Logic)
+                    // We assume the sheet is named "Hourly Logs" or is the 2nd sheet
+                    let wsHourly = wb.Sheets["Hourly Logs"];
+                    if (!wsHourly && wb.SheetNames.length > 1) {
+                        wsHourly = wb.Sheets[wb.SheetNames[1]]; // Fallback to 2nd sheet
+                    }
+
+                    if (wsHourly) {
+                        // Expect headers: Time, Power (MW), Steam (TPH), Flow (TPH)
+                        const hourlyJson = XLSX.utils.sheet_to_json(wsHourly); 
+                        // Map inconsistent column names if needed
+                        const mappedHourly = hourlyJson.map(row => {
+                            // Find keys loosely
+                            const timeKey = Object.keys(row).find(k => k.toLowerCase().includes('time'));
+                            const powerKey = Object.keys(row).find(k => k.toLowerCase().includes('power'));
+                            const steamKey = Object.keys(row).find(k => k.toLowerCase().includes('steam'));
+                            const flowKey = Object.keys(row).find(k => k.toLowerCase().includes('flow') || k.toLowerCase().includes('px'));
+                            
+                            return {
+                                time: row[timeKey] || '',
+                                power: parseFloat(row[powerKey]) || 0,
+                                steam: parseFloat(row[steamKey]) || 0,
+                                flow: parseFloat(row[flowKey]) || 0
+                            };
+                        }).filter(r => r.time); // Remove empty rows
+
+                        if (mappedHourly.length > 0) {
+                            newData.hourly = mappedHourly;
+                        }
+                    }
 
                     const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
                     setDashboardData(newData);
