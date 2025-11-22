@@ -391,7 +391,7 @@
                                 <div><h1 className="font-bold text-white">RPCM Monitor</h1><p className="text-xs text-gray-400">{lastUpdated}</p></div>
                             </div>
                             <button onClick={() => fileInputRef.current.click()} className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded text-sm font-medium flex items-center gap-2">
-                                <Icons.Upload className="w-4 h-4" /> Import Report
+                                <Icons.Upload className="w-4 h-4" />
                             </button>
                         </header>
 
@@ -418,7 +418,7 @@
                             {/* Hourly Trends - Enhanced UI */}
                             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 h-[450px] flex flex-col">
                                 <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><Icons.TrendingUp className="text-plant-green w-5 h-5" /> Hourly Trends (24h)</h3>
+                                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><Icons.TrendingUp className="text-plant-green w-5 h-5" /> Hourly Trends (12h)</h3>
                                     <div className="flex bg-gray-800 rounded-lg p-1">
                                         {['production', 'energy', 'steam'].map(mode => (
                                             <button key={mode} onClick={() => setChartView(mode)} className={`px-3 py-1 text-xs font-medium rounded-md capitalize transition-all ${chartView === mode ? 'bg-indigo-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>{mode}</button>
@@ -514,3 +514,4 @@
     </script>
 </body>
 </html>
+
