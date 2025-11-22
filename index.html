@@ -5,25 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RPCM Operations Monitor</title>
     
-<!-- PWA Meta Tags for Home Screen Icons -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="RPCM Monitor">
-<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE5MiIgaGVpZ2h0PSIxOTIiIGZpbGw9IiMxMTE4MjciLz48cGF0aCBkPSJNOTYgMTYgTDE2OCA0OCBWMTI4IEw5NiAxNjAgTDI0IDEyOCBWNDggTDk2IDE2WiIgc3Ryb2tlPSIjOGNjNjNmIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48dGV4dCB4PSI5NiIgeT0iMTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOGNjNjNmIiBmb250LXNpemU9IjI0IiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIj5SUENNPC90ZXh0Pjwvc3ZnPg==">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIGZpbGw9IiMxMTE4MjciLz48cGF0aCBkPSJNMzIgNiBMNTYgMjIgVjQyIEwzMiA1OCBMOCA0MiBWMjIgTDMyIDZaIiBzdHJva2U9IiM4Y2M2M2YiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9IjMyIiB5PSIzOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzhjYzYzZiIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiI+UlBDTTwvdGV4dD48L3N2Zz4=">
-<meta name="theme-color" content="#111827">
+    <!-- iOS SETTINGS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RPCM Monitor">
     
-    <!-- Apple Touch Icons - Multiple Sizes -->
-    <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDE4MCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE4MCIgaGVpZ2h0PSIxODAiIGZpbGw9IiMxMTE4MjciLz48cGF0aCBkPSJNNzUgMTAgTDE1NSA0MCBWMTEwIEw3NSAxNDAgTDE1IDExMCBWNDAgTDc1IDEwWiIgc3Ryb2tlPSIjOGNjNjNmIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNMzAgNDUgTDEzNSA0NSIgc3Ryb2tlPSIjOGNjNjNmIiBzdHJva2Utd2lkdGg9IjEuNSIgb3BhY2l0eT0iMC41Ii8+PHBhdGggZD0iTTMwIDk1IEwxMzUgOTUiIHN0cm9rZT0iIzhjYzYzZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIG9wYWNpdHk9IjAuNSIvPjx0ZXh0IHg9IjkwIiB5PSI4NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzhjYzYzZiIgZm9udC1zaXplPSIzMCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiI+UlBDTTwvdGV4dD48L3N2Zz4=">
-    <link rel="apple-touch-icon" sizes="152x152" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUyIiBoZWlnaHQ9IjE1MiIgdmlld0JveD0iMCAwIDE1MiAxNTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MiIgaGVpZ2h0PSIxNTIiIGZpbGw9IiMxMTE4MjciLz48cGF0aCBkPSJNNjQgMTAgTDEzMiAzOCBWOTQgTDY0IDEyMiBMMTAgOTQgVjM4IEw2NCAxMFoiIHN0cm9rZT0iIzhjYzYzZiIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTI1IDQyIEwxMTUgNDIiIHN0cm9rZT0iIzhjYzYzZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIG9wYWNpdHk9IjAuNSIvPjxwYXRoIGQ9Ik0yNSA4MCBMMTE1IDgwIiBzdHJva2U9IiM4Y2M2M2YiIHN0cm9rZS13aWR0aD0iMS41IiBvcGFjaXR5PSIwLjUiLz48dGV4dCB4PSI3NiIgeT0iNzIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM4Y2M2M2YiIGZvbnQtc2l6ZT0iMjYiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiPlJQQ008L3RleHQ+PC9zdmc+">
-    <link rel="apple-touch-icon" sizes="120x120" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiMxMTE4MjciLz48cGF0aCBkPSJNNTAwIDggTDEwMCAzMCBWODAgTDUwMCA5OCBMMCA4MCBWMzAgTDUwMCA4WiIgc3Ryb2tlPSIjOGNjNjNmIiBzdHJva2Utd2lkdGg9IjYiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNMjAgMzUgTDEwMCAzNSIgc3Ryb2tlPSIjOGNjNjNmIiBzdHJva2Utd2lkdGg9IjEuNSIgb3BhY2l0eT0iMC41Ii8+PHBhdGggZD0iTTIwIDY1IEwxMDAgNjUiIHN0cm9rZT0iIzhjYzYzZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIG9wYWNpdHk9IjAuNSIvPjx0ZXh0IHg9IjYwIiB5PSI2MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzhjYzYzZiIgZm9udC1zaXplPSIyMCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiI+UlBDTTwvdGV4dD48L3N2Zz4=">
+    <!-- ANDROID SETTINGS -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#111827">
     
-    <!-- Android/Generic Icons -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIGZpbGw9IiMxMTE4MjciLz48cGF0aCBkPSJNMzIgNiBMNTYgMjIgVjQyIEwzMiA1OCBMOCA0MiBWMjIgTDMyIDZaIiBzdHJva2U9IiM4Y2M2M2YiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9Ik0xNiAyMCBMNDggMjAiIHN0cm9rZT0iIzhjYzYzZiIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjUiLz48cGF0aCBkPSJNMTYgMzQgTDQ4IDM0IiBzdHJva2U9IiM4Y2M2M2YiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iMC41Ii8+PHRleHQgeD0iMzIiIHk9IjMyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOGNjNjNmIiBmb250LXNpemU9IjEyIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIj5SUENNPC90ZXh0Pjwvc3ZnPg==">
-    <link rel="icon" sizes="192x192" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE5MiIgaGVpZ2h0PSIxOTIiIGZpbGw9IiMxMTE4MjciLz48cGF0aCBkPSJNOTYgMTYgTDE2OCA0OCBWMTI4IEw5NiAxNjAgTDI0IDEyOCBWNDggTDk2IDE2WiIgc3Ryb2tlPSIjOGNjNjNmIiBzdHJva2Utd2lkdGg9IjEwIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTQwIDQ4IEwxNTIgNDgiIHN0cm9rZT0iIzhjYzYzZiIgc3Ryb2tlLXdpZHRoPSIyIiBvcGFjaXR5PSIwLjUiLz48cGF0aCBkPSJNNDAgMTA0IEwxNTIgMTA0IiBzdHJva2U9IiM4Y2M2M2YiIHN0cm9rZS13aWR0aD0iMiIgb3BhY2l0eT0iMC41Ii8+PHRleHQgeD0iOTYiIHk9IjEwMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzhjYzYzZiIgZm9udC1zaXplPSIzNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiI+UlBDTTwvdGV4dD48L3N2Zz4=">
-    
-    <!-- Windows Metro Icon -->
-    <meta name="msapplication-square150x150logo" content="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDE1MCAxNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIxNTAiIGZpbGw9IiMxMTE4MjciLz48cGF0aCBkPSJNNzUgMTIgTDEzNSAzOCBWMTEyIEw3NSAxMzggTDE1IDExMiBWMzggTDc1IDEyWiIgc3Ryb2tlPSIjOGNjNjNmIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNMzAgNDAgTDEyMCA0MCIgc3Ryb2tlPSIjOGNjNjNmIiBzdHJva2Utd2lkdGg9IjEuNSIgb3BhY2l0eT0iMC41Ii8+PHBhdGggZD0iTTMwIDgwIEwxMjAgODAiIHN0cm9rZT0iIzhjYzYzZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIG9wYWNpdHk9IjAuNSIvPjx0ZXh0IHg9Ijc1IiB5PSI3OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzhjYzYzZiIgZm9udC1zaXplPSIyNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiI+UlBDTTwvdGV4dD48L3N2Zz4=">
+    <!-- APP ICON -->
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/512/factory.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://img.icons8.com/fluency/192/factory.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="https://img.icons8.com/fluency/512/factory.png">
     
     <!-- React & ReactDOM (Load First) -->
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -592,5 +586,6 @@
     </script>
 </body>
 </html>
+
 
 
