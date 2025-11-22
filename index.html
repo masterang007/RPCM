@@ -407,7 +407,7 @@
 
                             {/* Real-Time Gauges */}
                             <div>
-                                <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><div className="w-1 h-5 bg-plant-blue rounded-full"></div> Real-Time Monitoring</h2>
+                                <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><div className="w-1 h-5 bg-plant-blue rounded-full"></div> Average 12hrs Data</h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                     {[...dashboardData.metrics.power, ...dashboardData.metrics.steam, ...dashboardData.metrics.flow].map((m, i) => (
                                         <Gauge key={i} {...m} color={i < 4 ? "text-plant-green" : i < 7 ? "text-plant-orange" : "text-plant-blue"} icon={Icons.Activity} />
@@ -514,4 +514,5 @@
     </script>
 </body>
 </html>
+
 
